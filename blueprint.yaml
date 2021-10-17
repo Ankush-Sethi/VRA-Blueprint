@@ -1,0 +1,95 @@
+name: Ankush
+version: 9
+formatVersion: 1
+inputs:
+  vCenter:
+    type: string
+    title: Choose Cloud
+    description: <b> Select which Cloud you want to provision </b> <br>
+    enum:
+      - Cloud01
+      - Cloud02
+  OS:
+    type: string
+    title: Choose Operating System
+    description: <b> Select image  </b>
+    oneOf:
+      - title: Windows Image (latest Patch)
+        const: Images
+      - title: Linux (RHEL 7.4)
+        const: Linux
+  CPU:
+    type: integer
+    title: Enter CPU Count
+    description: 'Select CPU count for VM , Minimum is 1 and Maximum is 4'
+    minimum: 1
+    maximum: 4
+  Memory:
+    type: integer
+    title: Enter Required Memory
+    description: 'Select Memory count for VM ,  Minimum is 1024 and Maximum is 8096'
+    minimum: 1024
+    maximum: 8096
+  ActiveDirectory:
+    type: boolean
+    description: Select Yes for AD Computer Object
+  TotalVM:
+    title: Select no of VMs
+    type: integer
+    description: Select the VM between 1 to 10
+    minimum: 1
+    maximum: 10
+    default: 1
+  ExtraUser:
+    title: New User Name
+    type: string
+    description: Enter User Name for your VM
+  EnterPassword:
+    title: Enter Password
+    type: string
+    description: Enter Password
+resources:
+  Cloud_vSphere_Network_1:
+    type: Cloud.vSphere.Network
+    metadata:
+      layoutPosition:
+        - 0
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:network'':''cloud02:vsphere''}'
+  Cloud_vSphere_Machine_1:
+    type: Cloud.vSphere.Machine
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      image: '${input.OS}'
+      cpuCount: '${input.CPU}'
+      ignoreActiveDirectory: '${input.ActiveDirectory}'
+      totalMemoryMB: '${input.Memory}'
+      count: '${input.TotalVM}'
+      storage:
+        constraints:
+          - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:ds'':''cloud02:vsphere''}'
+      constraints:
+        - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:cluster'':''cloud02:vsphere''}'
+      networks:
+        - network: '${resource.Cloud_vSphere_Network_1.id}'
+      cloudConfig: |
+        #cloud-config
+        chpasswd:
+          list: |
+            ${input.ExtraUser}:${input.EnterPassword}
+        runcmd:
+          - echo "this is Ankush" >> /tmp/test1.log
+        users:
+           - default
+           - name: '${input.ExtraUser}'
+             lock_passwd: false
+             groups: [sudo, admin]
+             shell: '/bin/bash'
+             sudo: ['ALL=(ALL) NOPASSWD:ALL']
+             passwd: '${input.EnterPassword}'
