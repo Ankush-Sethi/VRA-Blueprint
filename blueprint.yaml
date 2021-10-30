@@ -33,6 +33,7 @@ inputs:
   ActiveDirectory:
     type: boolean
     description: Select Yes for AD Computer Object
+    title: Computer Object creation
   TotalVM:
     title: Select no of VMs
     type: integer
@@ -48,29 +49,32 @@ inputs:
     title: Enter Password
     type: string
     description: Enter Password
+    encrypted: true
+  Notification:
+    type: string
+    enum:
+      - Slack
+      - Teams
+  NotificationChanel:
+    type: string
+    title: Channel Name
 resources:
   Cloud_vSphere_Network_1:
     type: Cloud.vSphere.Network
-    metadata:
-      layoutPosition:
-        - 0
-        - 0
     properties:
       networkType: existing
       constraints:
         - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:network'':''cloud02:vsphere''}'
-  Cloud_vSphere_Machine_1:
+  CentOS7:
     type: Cloud.vSphere.Machine
-    metadata:
-      layoutPosition:
-        - 1
-        - 0
     properties:
       image: '${input.OS}'
       cpuCount: '${input.CPU}'
       ignoreActiveDirectory: '${input.ActiveDirectory}'
       totalMemoryMB: '${input.Memory}'
       count: '${input.TotalVM}'
+      Notification: '${input.Notification}'
+      NotificationChanel: '${input.NotificationChanel}'
       storage:
         constraints:
           - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:ds'':''cloud02:vsphere''}'
