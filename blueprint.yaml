@@ -1,54 +1,41 @@
-name: Ankush
-version: 9
+name: MultipleDCs
+version: 1.0
 formatVersion: 1
 inputs:
-  vCenter:
+  DataCenter:
     type: string
-    title: Choose Cloud
-    description: <b> Select which Cloud you want to provision </b> <br>
-    enum:
-      - Cloud01
-      - Cloud02
-  OS:
-    type: string
-    title: Choose Operating System
-    description: <b> Select image  </b>
+    title: Choose Datacenter
+    description: Each Datacenter has dedicated cluster for Provisioning
     oneOf:
-      - title: Windows Image (latest Patch)
-        const: Images
-      - title: Linux (RHEL 7.4)
-        const: Linux
-  CPU:
+      - title: vCenter155 -DC Region
+        const: 'vCenter155:Cluster'
+      - title: vCenter102- DC Region
+        const: 'vCenter102:cluster'
+  TShirtSize:
+    type: string
+    enum:
+      - Small
+      - Medium
+      - Large
+    title: VM Size
+    description: |-
+      <b> Select the size of the deployment. </b> <br>
+      Small =  2 CPU - 2 GB RAM, <br>
+      Medium = 4 CPU - 4 GB RAM, <br> 
+      Large = 8 CPU - 8 GB RAM <br>
+  VMCount:
     type: integer
-    title: Enter CPU Count
-    description: 'Select CPU count for VM , Minimum is 1 and Maximum is 4'
-    minimum: 1
-    maximum: 4
-  Memory:
-    type: integer
-    title: Enter Required Memory
-    description: 'Select Memory count for VM ,  Minimum is 1024 and Maximum is 8096'
-    minimum: 1024
-    maximum: 8096
-  ActiveDirectory:
-    type: boolean
-    description: Select Yes for AD Computer Object
-    title: Computer Object creation
-  TotalVM:
-    title: Select no of VMs
-    type: integer
-    description: Select the VM between 1 to 10
+    default: 1
+    description: Enter VM count between 1 to 10
+    title: Choose VM Count
     minimum: 1
     maximum: 10
-    default: 1
   ExtraUser:
-    title: New User Name
     type: string
-    description: Enter User Name for your VM
+    title: 'VM Username:'
   EnterPassword:
-    title: Enter Password
     type: string
-    description: Enter Password
+    title: VM Password
     encrypted: true
   Notification:
     type: string
@@ -59,36 +46,33 @@ inputs:
     type: string
     title: Channel Name
 resources:
-  Cloud_vSphere_Network_1:
+  vsphere_network:
     type: Cloud.vSphere.Network
     properties:
       networkType: existing
       constraints:
-        - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:network'':''cloud02:vsphere''}'
-  CentOS7:
+        - tag: '${input.DataCenter == ''vCenter155:Cluster'' ? ''vCenter155:network'':''vCenter102:network''}'
+  vSphere_Machine_Linux:
     type: Cloud.vSphere.Machine
     properties:
-      image: '${input.OS}'
-      cpuCount: '${input.CPU}'
-      ignoreActiveDirectory: '${input.ActiveDirectory}'
-      totalMemoryMB: '${input.Memory}'
-      count: '${input.TotalVM}'
-      Notification: '${input.Notification}'
-      NotificationChanel: '${input.NotificationChanel}'
-      storage:
-        constraints:
-          - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:ds'':''cloud02:vsphere''}'
+      image: Linux
+      flavor: '${input.TShirtSize}'
+      name: '${resource.name}'
+      count: '${input.VMCount}'
       constraints:
-        - tag: '${input.vCenter == ''Cloud01'' ? ''vsphere:cluster'':''cloud02:vsphere''}'
+        - tag: '${input.DataCenter}'
       networks:
-        - network: '${resource.Cloud_vSphere_Network_1.id}'
+        - network: '${resource.vsphere_network.id}'
       cloudConfig: |
         #cloud-config
+        repo_update: true
+        repo_upgrade: all
+        packages:
+          - httpd
+          - php
         chpasswd:
           list: |
             ${input.ExtraUser}:${input.EnterPassword}
-        runcmd:
-          - echo "this is Ankush" >> /tmp/test1.log
         users:
            - default
            - name: '${input.ExtraUser}'
@@ -97,3 +81,5 @@ resources:
              shell: '/bin/bash'
              sudo: ['ALL=(ALL) NOPASSWD:ALL']
              passwd: '${input.EnterPassword}'
+        runcmd:
+          - echo "this is Ankush" >> /tmp/test1.log
