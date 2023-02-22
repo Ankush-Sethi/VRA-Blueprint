@@ -1,5 +1,5 @@
 name: MultipleDCs
-version: 1.0
+version: 1.1
 formatVersion: 1
 inputs:
   DataCenter:
@@ -7,7 +7,7 @@ inputs:
     title: Choose Datacenter
     description: Each Datacenter has dedicated cluster for Provisioning
     oneOf:
-      - title: vCenter155 -DC Region
+      - title: vCenter155 -DC Regions
         const: 'vCenter155:Cluster'
       - title: vCenter102- DC Region
         const: 'vCenter102:cluster'
